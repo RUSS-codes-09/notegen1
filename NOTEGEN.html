@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOTEGEN</title>
+<script>
+try { if (localStorage.getItem('notegenTheme') === 'dark') document.documentElement.classList.add('dark'); } catch(e) {}
+</script>
+<style>
+:root {
+    --bg: #f7f4ef;
+    --card-bg: #ffffff;
+    --text: #333333;
+    --label: #444444;
+    --muted: #666666;
+    --input-bg: #ffffff;
+    --input-border: #dddddd;
+    --input-text: #333333;
+    --shadow: rgba(0,0,0,.05);
+    --shadow-hover: rgba(0,0,0,.08);
+    --brand: #ad1d22;
+    --brand-hover: #b31217;
+    --modal-bg: #ffffff;
+    --history-bg: #fafafa;
+    --history-note-bg: #ffffff;
+    --history-border: #eeeeee;
+    --cag-bg: #ffffff;
+    --cag-text: #555555;
+    --cag-border: #cccccc;
+    --draft-bg: #fff3cd;
+    --draft-text: #856404;
+    --final-bg: #d4edda;
+    --final-text: #155724;
+}
+
+html.dark {
+    --bg: #121212;
+    --card-bg: #1e1e1e;
+    --text: #e0e0e0;
+    --label: #cccccc;
+    --muted: #aaaaaa;
+    --input-bg: #2a2a2a;
+    --input-border: #444444;
+    --input-text: #eeeeee;
+    --shadow: rgba(0,0,0,.4);
+    --shadow-hover: rgba(0,0,0,.6);
+    --modal-bg: #242424;
+    --history-bg: #2a2a2a;
+    --history-note-bg: #1e1e1e;
+    --history-border: #3a3a3a;
+    --cag-bg: #2a2a2a;
+    --cag-text: #cccccc;
+    --cag-border: #555555;
+    --draft-bg: #4d3800;
+    --draft-text: #ffd97a;
+    --final-bg: #1e4620;
+    --final-text: #8ce99a;
+}
+
+body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; }
+
+.offline-banner {
+    display: none;
+    background: #fff3cd;
+    color: #856404;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 2000;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+body.offline .offline-banner { display: block; }
+body.offline header { margin-top: 36px; }
+
+header {
+    background: var(--brand);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.header-content{ display:flex; flex-direction:column; }
+.header-content div { font-size: 14px; margin-top: 4px; }
+.header-actions{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.theme-btn, .logout-btn{ width:120px; padding:8px 9px; border-radius:6px; cursor:pointer; font-weight:bold; }
+
+.theme-btn { background-color: #f7f4ef; color: #d71920; transition: all .3s ease; }
+.theme-btn:hover { color: goldenrod; background: rgba(255,255,255,.2); transform: scale(1.05); }
+
+html.dark .theme-btn { background: #1f1f1f; color: #ffffff; border: 2px solid #555; }
+html.dark .theme-btn:hover { background: #333; color: #ffd700; }
+
+.logout-btn{ background:transparent; color:#fff; border:2px solid #fff; }
+.logout-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05);}
+.reset-count { background: transparent; border: 1px solid rgba(255,255,255,0.6); color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; cursor: pointer; }
+.reset-count:hover { background: rgba(255,255,255,0.2); transform: none; }
+
+.login-theme {
+    background-color: #f7f4ef;
+    position: fixed; top: 16px; right: 16px; z-index: 1000;
+    border-color: var(--brand); color: var(--brand); background: var(--card-bg);
+}
+.login-theme:hover { background: var(--card-bg); opacity: .85; }
+
+.login-container { display: none; justify-content: center; align-items: center; height: 100vh; background: var(--bg);}
+.login-card { background: var(--card-bg); padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px var(--shadow); width: 100%; max-width: 400px; text-align: center;}
+.login-card h2 { color: var(--brand); margin-bottom: 8px; font-size: 28px;}
+.login-card p { color: var(--muted); margin-top: 0; margin-bottom: 24px; font-size: 14px; }
+.error-msg { color: #ff5555; font-size: 13px; margin-top: 10px; display: none; }
+
+.container { max-width: 1100px; margin: 20px auto; padding: 0 16px; display: none; }
+.card { background: var(--card-bg); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px var(--shadow); transition:.25s;}
+.card:hover { box-shadow: 0 4px 12px var(--shadow-hover);}
+.card h3 { color: var(--text); }
+
+label { display: block; margin-top: 12px; font-weight: bold; color: var(--label); font-size: 14px;}
+input, select, textarea { width: 100%; padding: 10px; margin-top: 6px; border: 1px solid var(--input-border); border-radius: 6px; box-sizing: border-box; font-size: 14px; transition:.25s; background: var(--input-bg); color: var(--input-text);}
+select option { background: var(--input-bg); color: var(--input-text); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px;}
+
+.hidden { display: none; }
+.buttons { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;}
+button { background: var(--brand); color: #fff; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; transition:.2s;}
+button:hover { transform: scale(1.03); background: var(--brand-hover);}
+
+textarea { min-height: 120px; font-family: monospace; }
+#output { min-height: 400px; }
+#address { min-height: 70px; }
+
+input:focus, select:focus, textarea:focus { outline: none; border: 2px solid var(--brand); }
+
+#autoClearLabel { margin-top: 0; font-weight: normal; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--label);}
+
+.note-status { font-size: 13px; font-weight: bold; margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; display: none; }
+.note-status.draft { background: var(--draft-bg); color: var(--draft-text); display: block; }
+.note-status.final { background: var(--final-bg); color: var(--final-text); display: block; }
+
+.calldetails-card { border-left: 5px solid var(--brand); }
+.calldetails-card label { margin-top: 0; }
+
+.cag-group { display: flex; gap: 10px; margin-top: 8px; }
+.cag-btn { flex: 1; padding: 10px; border: 1px solid var(--cag-border); background: var(--cag-bg); color: var(--cag-text); border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; text-align: center; }
+.cag-btn:hover { opacity: .85; transform: scale(1); }
+.cag-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-header h3 { margin: 0; }
+.card-header label { margin: 0; font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; color: var(--muted); }
+.card-header input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; transform: scale(1.2); }
+
+.opt-check { font-weight: normal; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; color: var(--muted); margin-top: 8px; }
+.opt-check input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; transform: scale(1.2); }
+
+.dms-row { display: flex; gap: 8px; align-items: flex-end; margin-top: 16px; }
+.dms-row > div { flex: 1; }
+.dms-row button { padding: 10px 16px; white-space: nowrap; height: 42px; }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px 0; }
+.modal-box { background: var(--modal-bg); padding: 24px; border-radius: 10px; width: 100%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,.2); margin: auto; }
+.modal-box h3 { margin-top: 0; color: var(--brand); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-actions button { flex: 1; }
+.secondary-btn { background: #888; }
+.secondary-btn:hover { background: #666; }
+
+.history-box { max-width: 760px; max-height: 85vh; display: flex; flex-direction: column; }
+.history-list { overflow-y: auto; flex: 1; margin-top: 10px; }
+.history-item { border: 1px solid var(--history-border); border-radius: 8px; padding: 12px; margin-bottom: 12px; background: var(--history-bg); }
+.history-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.history-note { background: var(--history-note-bg); color: var(--text); border: 1px solid var(--history-border); padding: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow-y: auto; margin: 0 0 8px 0; font-family: monospace; }
+.history-actions { display: flex; gap: 8px; }
+.history-actions button { padding: 6px 12px; font-size: 12px; }
+.history-empty { color: var(--muted); text-align: center; padding: 30px 0; }
+
+.email-box { max-width: 760px; max-height: 90vh; display: flex; flex-direction: column; }
+#emailOutput { min-height: 320px; }
+
+.closed-ft-header { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.closed-ft-header h4 { margin: 0; color: var(--label); }
+.add-row-btn { padding: 6px 14px !important; font-size: 13px !important; background: var(--brand); }
+
+.closed-ft-row { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; align-items: end; margin-top: 8px; }
+.closed-ft-row input { margin-top: 0; }
+.remove-row-btn { background: #c0392b; color: #fff; border: none; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; height: 42px; }
+.remove-row-btn:hover { background: #922b21; transform: none; }
+
+.total-days-display { background: var(--final-bg); color: var(--final-text); padding: 10px 14px; border-radius: 6px; font-weight: bold; margin-top: 12px; text-align: center; }
+
+.conditional-section { border-top: 1px dashed var(--input-border); padding-top: 16px; margin-top: 16px; }
+
+.section-label { color: var(--brand); font-weight: bold; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-top: 0; }
+
+@media (max-width: 768px) {
+    header{ flex-direction: column; align-items: center; text-align: center; }
+    .header-content{ width:100%; align-items:center; }
+    .header-actions{ width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin-top:15px; gap:12px; }
+    .theme-btn, .logout-btn{ width:180px; max-width:90%; }
+    .closed-ft-row { grid-template-columns: 1fr; }
+    .closed-ft-row input { margin-top: 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="offline-banner">
+    ⚠️ You are offline. The app is working with cached data.
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-container">
+    <button class="theme-btn login-theme" id="themeBtnLogin" onclick="toggleLoginTheme()">🌙</button>
+    <div class="login-card">
+        <h2>NOTEGEN</h2>
+        <p>Version 1.0</p>
+        <p>Internal Use Only - Secure Login</p>
+        <label>Email Address</label>
+        <input type="email" id="username" placeholder="Enter Work Email">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter Password">
+        <button id="loginBtn" onclick="login()" style="margin-top: 20px; width: 100%;">Login</button>
+        <div id="loginError" class="error-msg">Invalid Email or Password. Please try again.</div>
+    </div>
+</div>
+
+<!-- APPLICATION PAGE -->
+<div id="appPage" style="display: none;">
+    <header>
+        <div class="header-content">
+            <h3>NOTEGEN</h3>
+            <div>PLDT Prepaid Fiber Note Generator v1.0</div>
+            <div>Today's Notes: <span id="count">0</span><button class="reset-count" onclick="resetCount()">Reset</button></div>
+        </div>
+        <div class="header-actions">
+            <button class="theme-btn app-theme" id="themeBtnApp" onclick="toggleAppTheme()">🌙</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="container" style="display: block;">
+        <div class="card calldetails-card">
+            <label>Call Details</label>
+            <input id="calldetails" placeholder="Enter call details here...">
+        </div>
+
+        <div class="card">
+            <label>Concern</label>
+            <select id="concern">
+                <optgroup label="TECH CONCERN">
+                    <option>INF-INB-PREPAID FIBER HOTLINE-NIC RED LOS</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-NIC PON BLINKING</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-NIC NORMAL STATUS</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-NIC NO INT LIGHTS</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-NIC OUTAGE</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-SIC</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-DEFECTIVE MODEM</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (TECH VISIT)</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (L2)</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (OUTAGE)</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-RESTAGE TICKET</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-FOR CLOSING TICKET</option>
+                </optgroup>
+                <optgroup label="GENERAL / ACCOUNT CONCERN">
+                    <option>INF-INB-PREPAID FIBER HOTLINE-LOAD INQUIRY</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-ACCOUNT INQUIRY</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-CHANGE DETAILS</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-MISAPPLIED PAYMENT</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-LOAD EXTENSION DUE TO NIC/SIC</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-ACCOUNT IS INELIGIBLE</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-MISALIGNED</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-INSTALLATION</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-REFUND RSO</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-REFUND LOAD</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-SWITCHBACK TO POSTPAID</option>
+                    <option>INF-INB-PREPAID FIBER HOTLINE-GHOST CALL/PRANK CALL/SHORT CALL</option>
+                </optgroup>
+            </select>
+            <label>Tech Representative</label>
+            <input id="rep" value="" readonly>
+        </div>
+
+        <div class="card" id="custCard">
+            <div class="card-header">
+                <h3>Customer Information</h3>
+                <label>
+                    <input type="checkbox" id="includeCustomerDetails" checked>
+                    Include in Notes
+                </label>
+            </div>
+            <div class="grid">
+                <div><label>Caller Name</label><input id="caller"></div>
+                <div>
+                    <label>Designation / Position</label>
+                    <select id="des"><option>SOR</option><option>Relative</option><option>Partner</option><option>Others</option><option>N/A</option></select>
+                </div>
+                <div><label>Account Number</label><input id="acct"></div>
+                <div><label>Account Name</label><input id="acctname"></div>
+                <div><label>Contact Number</label><input id="contact"></div>
+                <div>
+                    <label>Status</label>
+                    <select id="status"><option>ACTIVE</option><option>INACTIVE</option></select>
+                </div>
+            </div>
+            <label>Complete Address</label>
+            <textarea id="address"></textarea>
+            <label>WOCAS (What Customer Says)</label>
+            <textarea id="wocas"></textarea>
+        </div>
+
+        <div class="card" id="techCard">
+            <div class="card-header">
+                <h3>Technical Information</h3>
+                <label>
+                    <input type="checkbox" id="includeTechDetails" checked>
+                    Include in Notes
+                </label>
+            </div>
+            <div class="grid">
+                <div><label>Service ID</label><input id="serviceid"></div>
+                <div><label>Serial Number</label><input id="serial"></div>
+                <div><label>Option82</label><input id="option82"></div>
+                <div><label>CV Reading</label><input id="cv"></div>
+                <div>
+                    <label>Modem Lights</label>
+                    <select id="lights">
+                        <option>NORMAL STATUS</option><option>RED LOS</option><option>PON BLINKING</option><option>NO INT LIGHTS</option><option>NO POWER</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Downtime</label>
+                    <select id="downtime"><option>YES</option><option>NO</option></select>
+                </div>
+                <div>
+                    <label>RX Power</label>
+                    <input id="rxpower" placeholder="e.g., -20.5 dBm">
+                </div>
+                <div>
+                    <label>Parent Case</label>
+                    <input id="parentcase" placeholder="Enter Parent Case # (if any)">
+                </div>
+            </div>
+            <div class="dms-row">
+                <div>
+                    <label>DMS</label>
+                    <input id="dms" placeholder="Type 'fai' for FAILED TO REFRESH, or use Fill DMS">
+                </div>
+                <button type="button" onclick="openDmsModal()">Fill DMS</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Remarks Builder</h3>
+            <div class="grid">
+                <div><label>Talked To</label><select id="talkto"><option>SOR</option><option>NON SOR</option><option>N/A</option></select></div>
+                <div><label>Load Status</label><select id="loadstatus"><option>ACTIVE LOAD</option><option>WITHOUT ACTIVE LOAD</option></select></div>
+                <div><label>Troubleshooting</label><select id="ts"><option>Performed</option><option>Not Performed</option><option>Not Required</option></select></div>
+                <div><label>Resolution</label><select id="resolution"><option>Problem Persist</option><option>Problem Resolved</option><option>No reso, unable to proceed</option></select></div>
+            </div>
+
+            <label>CAG Status</label>
+            <div class="cag-group">
+                <button type="button" id="cag-none" class="cag-btn active" onclick="setCag('NONE', this)">NONE</button>
+                <button type="button" id="cag-passed" class="cag-btn" onclick="setCag('PASSED CAG', this)">PASSED CAG</button>
+                <button type="button" id="cag-failed" class="cag-btn" onclick="setCag('FAILED CAG', this)">FAILED CAG</button>
+            </div>
+            <input type="hidden" id="cag" value="NONE">
+
+            <div id="ftContainer" style="margin-top: 16px;">
+                <label>FT / Ticket Number</label>
+                <input id="ft">
+                <label class="opt-check">
+                    <input type="checkbox" id="includeFT" checked> Include FT in Notes
+                </label>
+            </div>
+
+            <div id="misappliedSection" class="conditional-section hidden">
+                <div class="section-label">Misapplied Payment Details</div>
+                <div class="grid">
+                    <div>
+                        <label>Bandwidth to Convert</label>
+                        <input id="misBandwidth" placeholder="e.g., 50 Mbps">
+                    </div>
+                    <div>
+                        <label>Expiration Date</label>
+                        <input type="date" id="misExpiration">
+                    </div>
+                </div>
+                <div>
+                    <label>Days of Conversion (max 60)</label>
+                    <input type="number" id="misDays" min="1" max="60" placeholder="Enter days (1-60)">
+                </div>
+            </div>
+
+            <div id="loadExtensionSection" class="conditional-section hidden">
+                <div class="section-label">Load Extension Details</div>
+                <div class="grid">
+                    <div>
+                        <label>Bandwidth to Extend</label>
+                        <input id="extBandwidth" placeholder="e.g., 50 Mbps">
+                    </div>
+                    <div>
+                        <label>Expiration Date</label>
+                        <input type="date" id="extExpiration">
+                    </div>
+                </div>
+
+                <div class="closed-ft-header">
+                    <h4>Closed FTs</h4>
+                    <button type="button" class="add-row-btn" onclick="addClosedFTRow()">+ Add FT</button>
+                </div>
+                <div id="closedFTList"></div>
+
+                <div class="total-days-display">
+                    TOTAL DAYS OF EXTENSION: <span id="totalDays">0</span>
+                </div>
+            </div>
+
+            <label>Additional Manual Remarks</label>
+            <textarea id="manualremarks"></textarea>
+        </div>
+
+        <div class="card" id="remarksCard">
+            <h3>Generated Notes</h3>
+            <div class="buttons">
+                <button onclick="generate()">Generate</button>
+                <button onclick="confirmFinal()">Confirm Final</button>
+                <button onclick="copyNotes()">Copy Notes</button>
+                <button onclick="openEmailModal()">Generate Email</button>
+                <button onclick="openHistoryModal()">History (24h)</button>
+                <button onclick="clearForm()">Clear Form</button>
+                <label id="autoClearLabel"><input type="checkbox" id="autoClear"> Auto Clear After Copy</label>
+            </div>
+            <div id="noteStatus" class="note-status"></div>
+            <textarea id="output" readonly></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- DMS MODAL -->
+<div id="dmsModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3>DMS Details</h3>
+        <label>Devices</label>
+        <input id="dmsDevices" placeholder="e.g., Modem, Router">
+        <label>IP Address</label>
+        <input id="dmsIp" placeholder="e.g., 192.168.1.1">
+        <label>Status</label>
+        <input id="dmsStatus" placeholder="e.g., Online, Offline">
+        <div class="modal-actions">
+            <button onclick="applyDms()">Use</button>
+            <button class="secondary-btn" onclick="closeDmsModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div id="historyModal" class="modal-overlay">
+    <div class="modal-box history-box">
+        <h3>Note History (Last 24 Hours)</h3>
+        <div id="historyList" class="history-list"></div>
+        <div class="modal-actions">
+            <button class="secondary-btn" onclick="closeHistoryModal()">Close</button>
+            <button onclick="clearHistory()">Clear History</button>
+        </div>
+    </div>
+</div>
+
+<!-- EMAIL MODAL -->
+<div id="emailModal" class="modal-overlay">
+    <div class="modal-box email-box">
+        <h3>Generate Partner Email</h3>
+        <div id="emailFieldsContainer">
+            <label>Kenan Order Number</label>
+            <input id="kenanOrder" placeholder="Enter Kenan Order #">
+
+            <div id="installFields" class="hidden">
+                <div class="grid">
+                    <div>
+                        <label>Serial Number</label>
+                        <input id="emailSerial" placeholder="Serial Number">
+                    </div>
+                    <div>
+                        <label>Option 82</label>
+                        <input id="emailOption82" placeholder="Option 82">
+                    </div>
+                </div>
+                <label>Service ID</label>
+                <input id="emailServiceId" placeholder="Service ID">
+            </div>
+
+            <label>Concern / Details</label>
+            <textarea id="emailConcern" placeholder="Describe the concern..." style="min-height:80px;"></textarea>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 12px;">
+            <button onclick="buildEmail()">Build Email</button>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <label>Email Preview</label>
+            <textarea id="emailOutput" readonly placeholder="Click 'Build Email' to generate..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button onclick="copyEmail()">Copy Email</button>
+            <button class="secondary-btn" onclick="closeEmailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Register Service Worker for offline support
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered'))
+            .catch(err => console.log('Service Worker registration failed:', err));
+    });
+}
+
+// Offline detection
+function updateOnlineStatus() {
+    document.body.classList.toggle('offline', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// =========================================================
+// LOCAL USER ACCOUNTS (NO FIREBASE NEEDED)
+// ➕ To add an agent: copy a line and change email + password
+// 🔑 The "rep" name is auto-generated from the email
+// =========================================================
+const USERS = [
+    { email: "admin@notegen.com",        password: "admin123" },
+    { email: "t-rjvaldez@gmail.com",     password: "Prep@idfbr2026" },
+    { email: "t-krpameroyan@gmail.com",  password: "Prep@idfbr2026" },
+    { email: "mhicsbasa@gmail.com",      password: "notegen123" }
+];
+
+const SESSION_KEY = "notegenSession";
+
+function repFromEmail(email) {
+    return email.split('@')[0].toUpperCase();
+}
+
+// THEME
+function applyTheme(theme) {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("notegenTheme", theme);
+    const text = theme === "dark" ? "🌙" : "☀️";
+    const loginBtn = document.getElementById("themeBtnLogin");
+    const appBtn = document.getElementById("themeBtnApp");
+    if (loginBtn) loginBtn.textContent = text;
+    if (appBtn) appBtn.textContent = text;
+}
+function toggleLoginTheme() {
+    const current = localStorage.getItem("notegenTheme") || "light";
+    applyTheme(current === "light" ? "dark" : "light");
+}
+function toggleAppTheme() { toggleLoginTheme(); }
+applyTheme(localStorage.getItem("notegenTheme") || "light");
+
+// NOTE STATE
+let generatedFlag = false;
+let confirmedFlag = false;
+
+function setStatus(mode) {
+    const el = document.getElementById('noteStatus');
+    if (mode === 'draft') {
+        el.className = 'note-status draft';
+        el.textContent = '⚠ DRAFT — not counted yet. Review the note, then click "Confirm Final."';
+    } else if (mode === 'final') {
+        el.className = 'note-status final';
+        el.textContent = '✓ FINAL — counted in today\'s notes and saved to history.';
+    } else {
+        el.className = 'note-status';
+        el.textContent = '';
+    }
+}
+
+// HISTORY
+const HISTORY_KEY = "notegenHistory";
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function getHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+    catch(e) { return []; }
+}
+function purgeHistory() {
+    const now = Date.now();
+    const filtered = getHistory().filter(h => now - h.timestamp < MAX_AGE_MS);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered));
+    return filtered;
+}
+function saveToHistory(note, rep, concernName) {
+    const history = purgeHistory();
+    history.unshift({ timestamp: Date.now(), rep: rep, concern: concernName, note: note });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+function openHistoryModal() {
+    const history = purgeHistory();
+    const list = document.getElementById('historyList');
+    if (history.length === 0) {
+        list.innerHTML = '<p class="history-empty">No notes saved in the last 24 hours.</p>';
+    } else {
+        list.innerHTML = history.map((h, i) => {
+            const time = new Date(h.timestamp).toLocaleString();
+            return `
+            <div class="history-item">
+                <div class="history-meta"><strong>${time}</strong> &nbsp;|&nbsp; ${escapeHtml(h.rep)} &nbsp;|&nbsp; ${escapeHtml(h.concern)}</div>
+                <pre class="history-note">${escapeHtml(h.note)}</pre>
+                <div class="history-actions">
+                    <button onclick="copyHistoryItem(${i})">Copy</button>
+                    <button class="secondary-btn" onclick="loadHistoryItem(${i})">Load to Output</button>
+                </div>
+            </div>`;
+        }).join("");
+    }
+    document.getElementById('historyModal').style.display = 'flex';
+}
+function closeHistoryModal() { document.getElementById('historyModal').style.display = 'none'; }
+function copyHistoryItem(i) {
+    const note = purgeHistory()[i].note;
+    navigator.clipboard.writeText(note).then(() => {
+        alert("Note copied to clipboard!");
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = note;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert("Note copied to clipboard!");
+    });
+}
+function loadHistoryItem(i) {
+    document.getElementById('output').value = purgeHistory()[i].note;
+    generatedFlag = true;
+    confirmedFlag = true;
+    setStatus('final');
+    closeHistoryModal();
+}
+function clearHistory() {
+    if (confirm("Delete ALL saved note history?")) {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify([]));
+        openHistoryModal();
+    }
+}
+document.getElementById('historyModal').addEventListener('click', function(e) {
+    if (e.target === this) closeHistoryModal();
+});
+
+// LOGIN (LOCAL - works offline)
+document.getElementById('username').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); login(); }
+});
+document.getElementById('password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); login(); }
+});
+
+function login() {
+    const email = document.getElementById('username').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    errorDiv.style.display = 'none';
+    btn.innerText = "Logging in...";
+
+    const found = USERS.find(u => u.email.toLowerCase() === email && u.password === password);
+
+    setTimeout(() => {
+        if (found) {
+            localStorage.setItem(SESSION_KEY, JSON.stringify(found));
+            btn.innerText = "Login";
+            showApp(repFromEmail(found.email));
+        } else {
+            errorDiv.textContent = "Invalid Email or Password. Please try again.";
+            errorDiv.style.display = 'block';
+            btn.innerText = "Login";
+        }
+    }, 300);
+}
+
+function logout() {
+    localStorage.removeItem(SESSION_KEY);
+    location.reload();
+}
+
+function showLogin() {
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('appPage').style.display = 'none';
+}
+function showApp(repName) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'block';
+    document.getElementById('rep').value = repName;
+    const cKey = "notegenCount-" + new Date().toISOString().slice(0,10);
+    let noteCount = parseInt(localStorage.getItem(cKey)) || 0;
+    document.getElementById('count').textContent = noteCount;
+    purgeHistory();
+}
+
+// Restore session on load (works offline!)
+(function restoreSession() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+        if (saved && saved.email) {
+            showApp(repFromEmail(saved.email));
+        } else {
+            showLogin();
+        }
+    } catch(e) { showLogin(); }
+})();
+
+function resetCount() {
+    if (confirm("Reset today's note counter back to 0?")) {
+        const cKey = "notegenCount-" + new Date().toISOString().slice(0,10);
+        localStorage.setItem(cKey, 0);
+        document.getElementById('count').textContent = 0;
+    }
+}
+
+// CAG
+function setCag(val, btn) {
+    document.getElementById('cag').value = val;
+    document.querySelectorAll('.cag-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// DMS
+document.getElementById('dms').addEventListener('input', function() {
+    if (this.value.trim().toLowerCase() === 'fai') {
+        this.value = 'FAILED TO REFRESH';
+    }
+});
+function openDmsModal() {
+    document.getElementById('dmsDevices').value = '';
+    document.getElementById('dmsIp').value = '';
+    document.getElementById('dmsStatus').value = '';
+    document.getElementById('dmsModal').style.display = 'flex';
+}
+function closeDmsModal() { document.getElementById('dmsModal').style.display = 'none'; }
+function applyDms() {
+    const devices = document.getElementById('dmsDevices').value.trim();
+    const ip = document.getElementById('dmsIp').value.trim();
+    const statusVal = document.getElementById('dmsStatus').value.trim();
+    let parts = [];
+    if (devices) parts.push("DEVICES: " + devices);
+    if (ip) parts.push("IP ADDRESS: " + ip);
+    if (statusVal) parts.push("STATUS: " + statusVal);
+    document.getElementById('dms').value = parts.join(" / ");
+    closeDmsModal();
+}
+document.getElementById('dmsModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDmsModal();
+});
+
+// CONCERN LISTS
+const techConcerns = [
+    "INF-INB-PREPAID FIBER HOTLINE-NIC RED LOS", "INF-INB-PREPAID FIBER HOTLINE-NIC PON BLINKING",
+    "INF-INB-PREPAID FIBER HOTLINE-NIC NORMAL STATUS", "INF-INB-PREPAID FIBER HOTLINE-NIC NO INT LIGHTS",
+    "INF-INB-PREPAID FIBER HOTLINE-NIC OUTAGE", "INF-INB-PREPAID FIBER HOTLINE-SIC",
+    "INF-INB-PREPAID FIBER HOTLINE-DEFECTIVE MODEM", "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (TECH VISIT)",
+    "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (L2)", "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (OUTAGE)",
+    "INF-INB-PREPAID FIBER HOTLINE-RESTAGE TICKET", "INF-INB-PREPAID FIBER HOTLINE-FOR CLOSING TICKET"
+];
+const ftConcerns = [
+    "INF-INB-PREPAID FIBER HOTLINE-NIC RED LOS", "INF-INB-PREPAID FIBER HOTLINE-NIC PON BLINKING",
+    "INF-INB-PREPAID FIBER HOTLINE-NIC OUTAGE", "INF-INB-PREPAID FIBER HOTLINE-SIC",
+    "INF-INB-PREPAID FIBER HOTLINE-NIC NO INT LIGHTS", "INF-INB-PREPAID FIBER HOTLINE-NIC NORMAL STATUS",
+    "INF-INB-PREPAID FIBER HOTLINE-DEFECTIVE MODEM", "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (TECH VISIT)",
+    "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (L2)", "INF-INB-PREPAID FIBER HOTLINE-FOLLOW UP (OUTAGE)"
+];
+
+function updateConditionalForms() {
+    const c = concern.value;
+    document.getElementById('misappliedSection').classList.toggle('hidden', !c.includes("MISAPPLIED PAYMENT"));
+    document.getElementById('loadExtensionSection').classList.toggle('hidden', !c.includes("LOAD EXTENSION DUE TO NIC/SIC"));
+}
+
+function updateUI(){
+    const c = concern.value;
+    const isTech = techConcerns.includes(c);
+    const needsFT = ftConcerns.includes(c);
+    const isGhost = c.includes("GHOST");
+
+    document.getElementById('custCard').style.display = isGhost ? "none" : "block";
+    document.getElementById('techCard').style.display = (isTech && !isGhost) ? "block" : "none";
+    document.getElementById('ftContainer').style.display = needsFT ? "block" : "none";
+
+    if(c.includes("RED LOS")) lights.value="RED LOS";
+    else if(c.includes("PON BLINKING")) lights.value="PON BLINKING";
+    else if(c.includes("NO INT")) lights.value="NO INT LIGHTS";
+    else if(c.includes("DEFECTIVE MODEM")) lights.value="NO POWER";
+    else if(c.includes("NORMAL STATUS") || c.includes("SIC") || c.includes("OUTAGE")) lights.value="NORMAL STATUS";
+
+    updateConditionalForms();
+}
+
+function autoResolution(){
+    const c = concern.value;
+    // General concerns first (Load Extension contains "SIC" - must not trigger tech logic)
+    if(c.includes("LOAD EXTENSION") || c.includes("MISAPPLIED") || c.includes("INELIGIBLE") || c.includes("MISALIGNED") || c.includes("INSTALLATION")) {
+        resolution.value = "No reso, unable to proceed";
+        return;
+    }
+    if(c.includes("SIC") || c.includes("NO INT") || c.includes("NORMAL STATUS") ||
+       c.includes("RED LOS") || c.includes("PON BLINKING") ||
+       c.includes("DEFECTIVE MODEM") || c.includes("OUTAGE")) {
+        resolution.value = "Problem Persist";
+    } else {
+        resolution.value = "No reso, unable to proceed";
+    }
+}
+
+concern.addEventListener("change", function(){ updateUI(); autoResolution(); });
+
+function pushFT(remarks) {
+    if (document.getElementById('includeFT').checked && ft.value.trim() !== "") {
+        remarks.push("FT: " + ft.value.trim());
+    }
+}
+
+// CLOSED FT DYNAMIC ROWS
+function addClosedFTRow() {
+    const container = document.getElementById('closedFTList');
+    const row = document.createElement('div');
+    row.className = 'closed-ft-row';
+    row.innerHTML = `
+        <input type="text" class="closed-ft-number" placeholder="FT Number (e.g., 00012345678)">
+        <input type="number" class="closed-ft-days" placeholder="Days (1-60)" min="1" max="60" oninput="calcTotalDays()">
+        <button type="button" class="remove-row-btn" onclick="removeClosedFTRow(this)">✕</button>
+    `;
+    container.appendChild(row);
+    calcTotalDays();
+}
+function removeClosedFTRow(btn) {
+    btn.parentElement.remove();
+    calcTotalDays();
+}
+function calcTotalDays() {
+    const daysInputs = document.querySelectorAll('.closed-ft-days');
+    let total = 0;
+    daysInputs.forEach(inp => {
+        const v = parseInt(inp.value);
+        if (!isNaN(v)) total += v;
+    });
+    document.getElementById('totalDays').textContent = total;
+}
+
+// CONFIRM FINAL
+function doConfirmFinal() {
+    confirmedFlag = true;
+    saveToHistory(document.getElementById('output').value, document.getElementById('rep').value, document.getElementById('concern').value);
+    incrementCount();
+    setStatus('final');
+}
+function confirmFinal() {
+    if (!generatedFlag) { alert("Generate a note first!"); return; }
+    if (confirmedFlag) { alert("This note is already confirmed as FINAL."); return; }
+    doConfirmFinal();
+}
+
+// MAIN GENERATE
+function generate(){
+    const c = concern.value;
+    const rep = document.getElementById('rep').value;
+    const accountStatus = document.getElementById('status').value;
+    const isTech = techConcerns.includes(c);
+
+    if(c.includes("GHOST")){
+        let ghostRemarks = "GHOST SPIEL 3 TIMES / SUBS NO RESPONSE";
+        if (manualremarks.value.trim() !== "") {
+            ghostRemarks += " / " + manualremarks.value.trim();
+        }
+        output.value = `C: ${c}
+A: TECH REPRESENTATIVE - ${rep}
+
+REMARKS:
+${ghostRemarks}`;
+        generatedFlag = true;
+        confirmedFlag = false;
+        setStatus('draft');
+        return;
+    }
+
+    let remarks = [];
+
+    remarks.push("TALKED TO " + talkto.value);
+    const cagVal = document.getElementById('cag').value;
+    if(cagVal !== "NONE") {
+        remarks.push(cagVal);
+    }
+    remarks.push(loadstatus.value);
+
+    if(ts.value == "Performed"){
+        remarks.push("CONDUCT BASIC TS", "CHECK WIRES", "GENTLY PUSH PATCH CORD", "RESTART MODEM");
+    } else if(ts.value == "Not Performed"){
+        remarks.push("TS NOT PERFORMED (SUBSCRIBER NOT AVAILABLE / UNABLE TO COOPERATE)");
+    }
+
+    // GENERAL CONCERNS FIRST (Load Extension contains "SIC" - must not hit tech logic)
+    if(c.includes("LOAD EXTENSION DUE TO NIC/SIC")){
+        if(extBandwidth.value.trim()) remarks.push("BANDWIDTH TO EXTEND: " + extBandwidth.value.trim());
+        if(extExpiration.value.trim()) remarks.push("EXPIRATION DATE: " + extExpiration.value);
+        const rows = document.querySelectorAll('.closed-ft-row');
+        rows.forEach(row => {
+            const ftNum = row.querySelector('.closed-ft-number').value.trim();
+            const days = row.querySelector('.closed-ft-days').value.trim();
+            if(ftNum && days) {
+                remarks.push("FT: " + ftNum + "     " + days);
+            }
+        });
+        const total = document.getElementById('totalDays').textContent;
+        if(total !== "0") remarks.push("TOTAL DAYS OF EXTENSION: " + total);
+    }
+    else if(c.includes("MISAPPLIED PAYMENT")){
+        if(misBandwidth.value.trim()) remarks.push("BANDWIDTH TO CONVERT: " + misBandwidth.value.trim());
+        if(misExpiration.value.trim()) remarks.push("EXPIRATION DATE: " + misExpiration.value);
+        if(misDays.value.trim()) remarks.push("DAYS OF CONVERSION: " + misDays.value);
+        remarks.push("TAG MS FORMS FOR KENAN DELETION", "ADV SUBS THEY'LL RECEIVE HOW TO TOP UP THRU GCASH/MAYA VIA SMS");
+    }
+    else if(c.includes("ACCOUNT IS INELIGIBLE")){
+        remarks.push("ENDORSED FOR EMAIL", "FAILED TO REPUSH", "ADV SUBS SLA 24 HRS");
+    }
+    else if(c.includes("MISALIGNED")){
+        remarks.push("ENDORSED FOR EMAIL", "ADV SUBS TO MONITOR INT");
+    }
+    else if(c.includes("INSTALLATION")){
+        remarks.push("ENDORSED FOR EMAIL", "ADV SUBS ENDORSED FOR FOLLOW UP OF INSTALLATION");
+    }
+    // TECH CONCERNS
+    else if(c.includes("RED LOS") || c.includes("PON BLINKING") || c.includes("DEFECTIVE MODEM")){
+        remarks.push(resolution.value.toUpperCase());
+        pushFT(remarks);
+        remarks.push("ADVISED SUBSCRIBER SLA OF 36 HRS.", "ADVISED SUBSCRIBER TO KEEP LINE OPEN.");
+    }
+    else if(c.includes("SIC") || c.includes("NO INT") || c.includes("NORMAL STATUS")){
+        remarks.push("ENDORSED TO L2");
+        pushFT(remarks);
+        remarks.push("ADVISED SUBSCRIBER SLA OF 36 HRS.", "ADVISED SUBSCRIBER TO KEEP MODEM OPEN.");
+    }
+    else if(c.includes("FOLLOW UP")){
+        if(c.includes("(OUTAGE)")) {
+            remarks.push("FOLLOWED UP ON CEP");
+        } else {
+            remarks.push("ENDORSED FOR EMAIL");
+        }
+        pushFT(remarks);
+        if(c.includes("(L2)") || c.includes("(OUTAGE)")){
+            remarks.push("ADV SUBS TO MONITOR INT");
+        }
+        if(c.includes("TECH VISIT")) {
+            remarks.push("ADVISED SUBSCRIBER TO KEEP LINE OPEN");
+        }
+        remarks.push("ADV SUBS TO CALL BACK FOR LOAD EXTENSION");
+    }
+    else if(c.includes("OUTAGE")){
+        remarks.push("CONFIRMED ACCOUNT IS AFFECTED BY A DECLARED OUTAGE");
+        pushFT(remarks);
+        remarks.push("NO COMMITTED RESTORATION TIME AVAILABLE", "ADVISED SUBSCRIBER TO WAIT FOR SERVICE RESTORATION", "ADVISED SUBSCRIBER TO KEEP LINE OPEN.");
+    }
+
+    if(manualremarks.value.trim() !== "") remarks.push(manualremarks.value.trim());
+
+    let baseNotes = `C: ${c}
+A: TECH REPRESENTATIVE - ${rep}`;
+
+    if (document.getElementById('calldetails').value.trim() !== "") {
+        baseNotes += `
+CALL DETAILS: ${document.getElementById('calldetails').value}`;
+    }
+
+    if (document.getElementById('includeCustomerDetails').checked) {
+        baseNotes += `
+
+CALLER NAME: ${caller.value}
+DESIGNATION/POSITION: ${des.value}
+ACCOUNT NUMBER: ${acct.value}
+ACCOUNT NAME: ${acctname.value}
+ADDRESS: ${address.value}
+CONTACT NUMBER: ${contact.value}
+STATUS: ${accountStatus}`;
+    }
+
+    if (isTech && document.getElementById('includeTechDetails').checked) {
+        baseNotes += `
+
+SERVICE ID: ${serviceid.value}
+SERIAL NUMBER: ${serial.value}
+OPTION82: ${option82.value}
+CV READING: ${cv.value}
+MODEM LIGHTS: ${lights.value}
+RX POWER: ${rxpower.value}
+DOWNTIME: ${downtime.value}
+PARENT CASE: ${parentcase.value}`;
+
+        if (document.getElementById('dms').value.trim() !== "") {
+            baseNotes += `
+DMS: ${document.getElementById('dms').value}`;
+        }
+    }
+
+    baseNotes += `
+
+WOCAS:
+${wocas.value}
+
+REMARKS:
+${remarks.join(" / ")}`;
+
+    output.value = baseNotes;
+
+    generatedFlag = true;
+    confirmedFlag = false;
+    setStatus('draft');
+}
+
+function incrementCount() {
+    const cKey = "notegenCount-" + new Date().toISOString().slice(0,10);
+    let noteCount = parseInt(localStorage.getItem(cKey)) || 0;
+    noteCount++;
+    localStorage.setItem(cKey, noteCount);
+    document.getElementById('count').textContent = noteCount;
+}
+
+function copyNotes() {
+    const out = document.getElementById('output');
+    if(!out.value) return alert("No notes generated yet!");
+
+    if (generatedFlag && !confirmedFlag) {
+        const ask = confirm("This note is NOT confirmed as FINAL yet.\n\n[OK] = Confirm as final (count it) & copy\n[Cancel] = Copy only (do NOT count)");
+        if (ask) doConfirmFinal();
+    }
+
+    out.select();
+    out.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(out.value).then(() => {
+        alert("Notes copied to clipboard!");
+        if(document.getElementById('autoClear').checked) clearForm();
+    }).catch(() => {
+        document.execCommand('copy');
+        alert("Notes copied!");
+        if(document.getElementById('autoClear').checked) clearForm();
+    });
+}
+
+function clearForm() {
+    document.querySelectorAll('input, textarea').forEach(el => {
+        if(el.id !== 'rep' && el.id !== 'output' && el.id !== 'username' && el.id !== 'password' && el.type !== 'hidden') el.value = '';
+    });
+    document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+    document.getElementById('output').value = '';
+
+    document.getElementById('includeTechDetails').checked = true;
+    document.getElementById('includeCustomerDetails').checked = true;
+    document.getElementById('includeFT').checked = true;
+
+    document.getElementById('cag').value = 'NONE';
+    document.querySelectorAll('.cag-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === 0);
+    });
+
+    document.getElementById('closedFTList').innerHTML = '';
+    document.getElementById('totalDays').textContent = '0';
+
+    generatedFlag = false;
+    confirmedFlag = false;
+    setStatus('none');
+
+    updateUI();
+    autoResolution();
+}
+
+// EMAIL GENERATION
+function openEmailModal() {
+    const c = concern.value;
+    const isInstallationType = c.includes("INSTALLATION") || c.includes("ACCOUNT ACTIVATION") || c.includes("DISCONNECTION");
+    const isTechFollowUp = c.includes("FOLLOW UP") || c.includes("TECH VISIT") || c.includes("L2") || c.includes("OUTAGE");
+
+    if (!isInstallationType && !isTechFollowUp) {
+        alert("Generate Email is only available for:\n- Follow Up / Tech Visit / L2\n- Installation / Account Activation / Disconnection\n\nCurrent concern does not qualify.");
+        return;
+    }
+
+    document.getElementById('kenanOrder').value = '';
+    document.getElementById('emailConcern').value = '';
+    document.getElementById('emailSerial').value = document.getElementById('serial').value || '';
+    document.getElementById('emailOption82').value = document.getElementById('option82').value || '';
+    document.getElementById('emailServiceId').value = document.getElementById('serviceid').value || '';
+
+    document.getElementById('installFields').classList.toggle('hidden', !isInstallationType);
+
+    document.getElementById('emailOutput').value = '';
+    document.getElementById('emailModal').style.display = 'flex';
+}
+function closeEmailModal() { document.getElementById('emailModal').style.display = 'none'; }
+
+function buildEmail() {
+    const c = concern.value;
+    const isInstallationType = c.includes("INSTALLATION") || c.includes("ACCOUNT ACTIVATION") || c.includes("DISCONNECTION");
+
+    const acctNum = document.getElementById('acct').value;
+    const acctName = document.getElementById('acctname').value;
+    const address = document.getElementById('address').value;
+    const contact = document.getElementById('contact').value;
+    const wocas = document.getElementById('wocas').value;
+
+    const kenanOrder = document.getElementById('kenanOrder').value.trim();
+    const emailConcern = document.getElementById('emailConcern').value.trim();
+
+    if (!kenanOrder) { alert("Please enter the Kenan Order Number."); return; }
+    if (!emailConcern) { alert("Please describe the concern."); return; }
+
+    let emailBody = `Hi Partner's we are seeking for you assistance with this account.
+
+ACCOUNT NUMBER: ${acctNum}
+ACCOUNT NAME: ${acctName}
+ADDRESS: ${address}
+CONTACT NUMBER: ${contact}
+KENAN ORDER NUMBER: ${kenanOrder}
+`;
+
+    if (isInstallationType) {
+        const emailSerial = document.getElementById('emailSerial').value.trim();
+        const emailOption82 = document.getElementById('emailOption82').value.trim();
+        const emailServiceId = document.getElementById('emailServiceId').value.trim();
+
+        emailBody += `SERIAL NUMBER: ${emailSerial}
+OPTION 82: ${emailOption82}
+SERVICE ID: ${emailServiceId}
+CONCERN: ${emailConcern}
+
+WOCAS:
+${wocas}
+
+Thank you!`;
+    } else {
+        const faultTicket = document.getElementById('ft').value.trim();
+        emailBody += `FAULT TICKET #: ${faultTicket}
+CONCERN: ${emailConcern}
+
+WOCAS:
+${wocas}
+
+Thank you!`;
+    }
+
+    document.getElementById('emailOutput').value = emailBody;
+}
+
+function copyEmail() {
+    const out = document.getElementById('emailOutput');
+    if(!out.value) return alert("Build the email first!");
+
+    out.select();
+    out.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(out.value).then(() => {
+        alert("Email copied to clipboard!");
+    }).catch(() => {
+        document.execCommand('copy');
+        alert("Email copied to clipboard!");
+    });
+}
+
+document.getElementById('emailModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEmailModal();
+});
+
+// Initial UI setup
+updateUI();
+autoResolution();
+</script>
+</body>
+</html>
